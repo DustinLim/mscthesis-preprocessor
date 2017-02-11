@@ -7,84 +7,77 @@ import it.unisa.codeSmellAnalyzer.parser.CodeParser;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Stack;
 import java.util.Vector;
 
 import org.eclipse.core.runtime.CoreException;
+import org.eclipse.jdt.core.compiler.IProblem;
 import org.eclipse.jdt.core.dom.CompilationUnit;
+import org.eclipse.jdt.core.dom.PackageDeclaration;
 import org.eclipse.jdt.core.dom.TypeDeclaration;
 
 public class FolderToJavaProjectConverter {
 	
-	
-	public static Vector<ClassBean> extractClasses(String pPath){
-		Vector<ClassBean> system = new Vector<ClassBean>();
-		Vector<PackageBean> packages = null;
-		
-		try {
-			//Convert the folder in a Java Project
-			packages = FolderToJavaProjectConverter.convert(pPath);	
-		} catch (CoreException e) {
-			e.printStackTrace();
-		}
-		
-		//Create vector of all the classes in the system
-		for(PackageBean packageBean: packages) {
-			for(ClassBean classBean: packageBean.getClasses()) {
-				system.add(classBean);
-			}
-		}
-		
-		return system;
-	}
-	
-	
-
-	public static Vector<PackageBean> convert(String pPath) throws CoreException {
+	public static Vector<PackageBean> convert(String pPath, String projectID) throws CoreException {
 		File projectDirectory = new File(pPath);
 		CodeParser codeParser = new CodeParser();
 		Vector<PackageBean> packages = new Vector<PackageBean>();
 		
 		if(projectDirectory.isDirectory()) {
+			System.out.println(projectDirectory.getAbsolutePath());
+			List<String> sourcepathEntries = listAllDirectories(projectDirectory);
 			for(File subDir: projectDirectory.listFiles()) {
 				
 				if(subDir.isDirectory()) {
 					Vector<File> javaFiles = FolderToJavaProjectConverter.listJavaFiles(subDir);
 					
 					if(javaFiles.size() > 0) {
+						//System.out.println("Files found:");
 						for(File javaFile: javaFiles) {
 							//System.out.println(javaFile.getAbsolutePath());
 							CompilationUnit parsed;
 							try {
-								parsed = codeParser.createParser(FileUtility.readFile(javaFile.getAbsolutePath()));
-								TypeDeclaration typeDeclaration = (TypeDeclaration)parsed.types().get(0);
+								parsed = codeParser.createParserWithBindings(javaFile, FileUtility.readFile(javaFile.getAbsolutePath()), sourcepathEntries);
+								
+								/*
+								for (IProblem problem : parsed.getProblems()) {
+									//System.out.println(problem.getMessage());
+								}
+								*/
 								
 								Vector<String> imports = new Vector<String>();
 
 								for(Object importedResource: parsed.imports())
 									imports.add(importedResource.toString());
 								
+								// Note: No package declaration = default package
+								PackageDeclaration packageDeclaration = parsed.getPackage();
+								String packageQualifiedName = (packageDeclaration == null) ? 
+										"(default package)" : packageDeclaration.getName().getFullyQualifiedName();
+								
+								
 								if(! FolderToJavaProjectConverter.isAlreadyCreated(
-										parsed.getPackage().getName().getFullyQualifiedName(), packages)) {
+										packageQualifiedName, packages)) {
 									
 									PackageBean packageBean = new PackageBean();
-									packageBean.setName(parsed.getPackage().getName().getFullyQualifiedName());
+									packageBean.setName(packageQualifiedName);
 									
-									packageBean.addClass(ClassParser.parse(typeDeclaration, packageBean.getName(), imports));
+									processCompilationUnit(parsed, projectID, javaFile, packageBean, imports);
+									
 									packages.add(packageBean);
 									
 								} else {
 									PackageBean packageBean = FolderToJavaProjectConverter.getPackageByName(
-											parsed.getPackage().getName().getFullyQualifiedName(), packages);
+											packageQualifiedName, packages);
 									
-									packageBean.addClass(ClassParser.parse(typeDeclaration, packageBean.getName(), imports));
+									processCompilationUnit(parsed, projectID, javaFile, packageBean, imports);
 								}
 								
-							} catch (IOException e) {
+							} catch (Exception e) {
 								e.printStackTrace();
-							} catch (NullPointerException e) {
-								// do nothing
-							} catch (IndexOutOfBoundsException e) {
-								// do nothing
 							}
 						}
 					}
@@ -105,6 +98,42 @@ public class FolderToJavaProjectConverter {
 		
 		return packages;
 	}
+
+	protected static void processCompilationUnit(
+			CompilationUnit unit, 
+			String projectID,
+			File javaFile, 
+			PackageBean packageBean,
+			Vector<String> imports) {
+		ClassParser classParser = new ClassParser();
+		classParser.parentFile = javaFile;
+
+		for (Object object: unit.types()) {
+			TypeDeclaration typeDeclaration = (TypeDeclaration)object;
+			ClassBean classBean = classParser.parse(typeDeclaration, packageBean.getName(), imports, unit, projectID);
+			packageBean.addClass(classBean);
+		}
+	}
+
+	/***
+	 * Given a root directory, lists itself and all of its sub-directories. 
+	 */
+	public static List<String> listAllDirectories(File root) {
+		Stack<File> stack = new Stack<>();
+		stack.push(root);
+		List<String> foundDirectories = new ArrayList<>();
+		
+		while (!stack.isEmpty()) {
+			File file = stack.pop();
+			if (file.isDirectory()) {
+				foundDirectories.add(file.getAbsolutePath());
+				stack.addAll(Arrays.asList(file.listFiles()));
+			}
+		}
+		
+		System.out.println("# (Sub)directories: " + foundDirectories.size());
+		return foundDirectories;
+	}
 	
 	private static Vector<File> listJavaFiles(File pDirectory) {
 		Vector<File> javaFiles=new Vector<File>(); 
@@ -113,7 +142,7 @@ public class FolderToJavaProjectConverter {
 		if(fList != null) {
 			for (File file : fList) {
 				if (file.isFile()) {
-					if(file.getName().contains(".java")) {
+					if(file.getName().endsWith(".java")) {
 						javaFiles.add(file);
 					}
 				} else if (file.isDirectory()) {

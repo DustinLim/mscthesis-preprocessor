@@ -8,20 +8,21 @@ import org.eclipse.core.runtime.CoreException;
 import it.unisa.codeSmellAnalyzer.beans.ClassBean;
 import it.unisa.codeSmellAnalyzer.beans.PackageBean;
 import it.unisa.codeSmellAnalyzer.metrics.CKMetrics;
+import it.unisa.codeSmellAnalyzer.metrics.SizeMetrics;
 
 public class RunQualityMetricsAnalysis {
 
 	public static void main(String args[]) {
 		
 		// Path to the directory containing all the projects under analysis 
-		String pathToDirectory = "/Users/dustinlim/Desktop/src/";
+		String pathToDirectory = "/Users/dustinlim/Downloads/Apps/";
 		
 		File experimentDirectory = new File(pathToDirectory);
 		
 		for(File project: experimentDirectory.listFiles()) {
 			try {
 				// Method to convert a directory into a set of java packages.
-				Vector<PackageBean> packages = FolderToJavaProjectConverter.convert(project.getAbsolutePath());
+				Vector<PackageBean> packages = FolderToJavaProjectConverter.convert(project.getAbsolutePath(), null);
 				
 				for(PackageBean packageBean: packages) {
 					for(ClassBean classBean: packageBean.getClasses()) {
@@ -29,7 +30,7 @@ public class RunQualityMetricsAnalysis {
 						// How to call methods for computing quality metrics.
 						System.out.println("====================================");
 						System.out.println("Class Name: " + packageBean.getName() +"."+classBean.getName());
-						System.out.println("	Lines of code: " + CKMetrics.getLOC(classBean));
+						System.out.println("	Lines of code: " + SizeMetrics.getLOC(classBean));
 						System.out.println("	Lack of Cohesion: " + CKMetrics.getLCOM(classBean));
 						System.out.println("	Coupling Between Objects: " + CKMetrics.getCBO(classBean));
 						System.out.println("	Response For a Class: " + CKMetrics.getRFC(classBean));

@@ -1,6 +1,6 @@
 package it.unisa.codeSmellAnalyzer.beans;
 
-public class InstanceVariableBean {
+public class InstanceVariableBean implements Comparable<InstanceVariableBean> {
 	
 	private String visibility;
 	private String type;
@@ -47,11 +47,14 @@ public class InstanceVariableBean {
 	}
 	
 	public String toString() {
-		return "(" + visibility + "|" + type + "|" + name + "|" + initialization + ")";
+		return "(" + visibility + "|" + type + "|" + name + ")";
 	}
 	
 	public boolean equals(Object arg){
 		return this.getName().equals(((InstanceVariableBean)arg).getName());
 	}
 	
+	public int compareTo(InstanceVariableBean bean) {
+		return this.getName().compareTo(bean.getName());
+	}
 }

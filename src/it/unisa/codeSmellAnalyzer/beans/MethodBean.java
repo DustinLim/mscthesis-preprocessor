@@ -1,25 +1,42 @@
 package it.unisa.codeSmellAnalyzer.beans;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Vector;
 
+import org.eclipse.jdt.core.dom.IVariableBinding;
+import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.SingleVariableDeclaration;
 import org.eclipse.jdt.core.dom.Type;
 
 public class MethodBean {
 	
-	private ClassBean belongingClass;
+	/**
+	 * The Eclipse JDT ast node this class wraps around.
+	 */
+	private MethodDeclaration astNode;
+	private String uid;
+
+	private String belongingClassName;
 	private String name;
 	private String textContent;
 	private Collection<InstanceVariableBean> usedInstanceVariables;
-	private Collection<MethodBean> methodCalls;
+	private Collection<InvocationBean> invocations;
+	private List<IVariableBinding> referencedFields;
+	private boolean isChainedMethodCall;
 	private Type returnType;
 	private List<SingleVariableDeclaration> parameters;
-	
-	public MethodBean() {
+	private int lineNumber;	
+		
+	public MethodBean(MethodDeclaration astNode) {
+		this.astNode = astNode;
 		usedInstanceVariables = new Vector<InstanceVariableBean>();
-		methodCalls = new Vector<MethodBean>();
+		invocations = new Vector<InvocationBean>();
+	}
+	
+	public MethodDeclaration getAstNode() {
+		return astNode;
 	}
 	
 	public String getName() {
@@ -29,7 +46,15 @@ public class MethodBean {
 	public void setName(String pName) {
 		name = pName;
 	}
+
+	public String getUID() {
+		return uid;
+	}
 	
+	public void setUID(String pUid) {
+		uid = pUid;
+	}
+
 	public String getTextContent() {
 		return textContent;
 	}
@@ -53,35 +78,57 @@ public class MethodBean {
 	public void removeUsedInstanceVariables(InstanceVariableBean pInstanceVariable) {
 		usedInstanceVariables.remove(pInstanceVariable);
 	}
-	
-	public Collection<MethodBean> getMethodCalls() {
-		return methodCalls;
+
+	public boolean isChainedMethodCall() {
+		return isChainedMethodCall;
 	}
 	
-	public void setMethodCalls(Collection<MethodBean> pMethodCalls) {
-		methodCalls = pMethodCalls;
+	public void setChainedMethodCall(boolean b) {
+		isChainedMethodCall = b;
 	}
 	
-	public void addMethodCalls(MethodBean pMethodCall) {
-		methodCalls.add(pMethodCall);
+	public Collection<InvocationBean> getInvocations() {
+		return invocations;
+	}
+
+	public void setInvocations(Collection<InvocationBean> invocations) {
+		this.invocations = invocations;
+	}
+
+	public Collection<InvocationBean> getRootInvocations() {
+		Collection<InvocationBean> rootInvocations = new ArrayList<>();
+		
+		for (InvocationBean invocation : invocations) {
+			if (invocation.isRootInvocation()) {
+				rootInvocations.add(invocation);
+			}
+		}
+		
+		return rootInvocations;
 	}
 	
-	public void removeMethodCalls(MethodBean pMethodCall) {
-		methodCalls.remove(pMethodCall);
+	public List<IVariableBinding> getReferencedFields() {
+		return referencedFields;
 	}
-	
+
+	public void setReferencedFields(List<IVariableBinding> fields) {
+		this.referencedFields = fields;
+	}
+
 	public String toString() {
 		
 		String string =
 			"(" + name + "|" +
 			(textContent.length() > 10 ? textContent.replace("\n", " ").replace("\t", "").substring(0, 10).concat("...") : "") + "|";
-			
+
+		string += "line " + lineNumber + "|";
+		
 		for (InstanceVariableBean usedInstanceVariable : usedInstanceVariables)
 			string += usedInstanceVariable.getName() + ",";
 		string = string.substring(0, string.length() - 1);
 		string += "|";
 		
-		for (MethodBean methodCall : methodCalls)
+		for (InvocationBean methodCall : invocations)
 			string += methodCall.getName() + ",";
 		string = string.substring(0, string.length() - 1);
 		string += ")";
@@ -110,12 +157,29 @@ public class MethodBean {
 		this.parameters = parameters;
 	}
 	
-	public ClassBean getBelongingClass() {
-		return belongingClass;
+	public String getBelongingClassName() {
+		return belongingClassName;
 	}
 
-	public void setBelongingClass(ClassBean belongingClass) {
-		this.belongingClass = belongingClass;
+	public void setBelongingClassName(String belongingClassName) {
+		this.belongingClassName = belongingClassName;
+	}
+
+	public int getLineNumber() {
+		return lineNumber;
+	}
+
+	public void setLineNumber(int lineNumber) {
+		this.lineNumber = lineNumber;
+	}
+	
+	public String getQualifiedName() {
+		if (belongingClassName != null) {
+			return belongingClassName + "." + name;
+		}
+		else {
+			return null;			
+		}
 	}
 
 	public boolean equals(Object arg){

@@ -17,7 +17,11 @@ public class MethodVisitor extends ASTVisitor {
 	
 	public boolean visit(MethodDeclaration pMethodNode) { 
 		methodNodes.add(pMethodNode);
-		return true;
+		
+		// Nested methods do not exist in Java, but methods can contain
+		// anonymous classes that define methods. However, to avoid double counting  
+		// child nodes such as MethodInvocation types we should return false here.
+		return false;
 	}
 	
 	public boolean visit(TypeDeclaration pClassNode) {

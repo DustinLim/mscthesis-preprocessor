@@ -1,13 +1,21 @@
 package it.unisa.codeSmellAnalyzer.parser;
 
-import it.unisa.codeSmellAnalyzer.beans.MethodBean;
+import java.util.List;
+
+import org.eclipse.jdt.core.dom.MethodInvocation;
+
+import it.unisa.codeSmellAnalyzer.beans.InvocationBean;
 
 public class InvocationParser {
 	
-	public static MethodBean parse(String pInvocationName) {
-		MethodBean methodBean = new MethodBean();
-		methodBean.setName(pInvocationName);
-		return methodBean;
+	public static InvocationBean parse(List<Object> pInvocation) {
+		InvocationBean invocationBean = new InvocationBean();
+		invocationBean.setName((String)pInvocation.get(0));
+		invocationBean.setChainedMethodCall((Boolean)pInvocation.get(1));
+		invocationBean.setBelongingClassName((String)pInvocation.get(2));
+		invocationBean.setLineNumber((Integer)pInvocation.get(3));
+		invocationBean.setNode((MethodInvocation)pInvocation.get(4));
+		return invocationBean;
 	}
 
 }

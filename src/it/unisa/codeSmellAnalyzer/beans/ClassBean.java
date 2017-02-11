@@ -1,19 +1,31 @@
 package it.unisa.codeSmellAnalyzer.beans;
 
+import java.io.File;
 import java.util.Collection;
 import java.util.Vector;
 
+import org.eclipse.jdt.core.dom.TypeDeclaration;
+
 public class ClassBean {
 	
+	/**
+	 * The Eclipse JDT ast node this class wraps around.
+	 * A type declaration is the union of ClassDeclaration and InterfaceDeclaration.
+	 */
+	private TypeDeclaration astNode;
+	private String uid;
+
 	private String name;
 	private Collection<InstanceVariableBean> instanceVariables;
 	private Collection<MethodBean> methods;
 	private Collection<String> imports;
+	private Collection<ClassBean> innerClasses;
 	private String textContent;
 	private int LOC;
 	private String superclass;
 	private String belongingPackage;
 	private int entityClassUsage;
+	private File parentFile;
 	
 	public int getLOC() {
 		return LOC;
@@ -23,13 +35,23 @@ public class ClassBean {
 		LOC = lOC;
 	}
 
-	public ClassBean() {
+	public ClassBean(TypeDeclaration astNode) {
+		setAstNode(astNode);
 		name = null;
 		instanceVariables = new Vector<InstanceVariableBean>();
 		methods = new Vector<MethodBean>();
+		setInnerClasses(new Vector<ClassBean>());
 		setImports(new Vector<String>());
 	}
 	
+	public TypeDeclaration getAstNode() {
+		return astNode;
+	}
+
+	public void setAstNode(TypeDeclaration astNode) {
+		this.astNode = astNode;
+	}
+
 	public String getName() {
 		return name;
 	}
@@ -37,6 +59,18 @@ public class ClassBean {
 	public void setName(String pName) {
 		name = pName;
 	}
+	
+	public String getUID() {
+		return uid;
+	}
+
+	public void setUID(String pUid) {
+		uid = pUid;
+	}
+
+	public String getQualifiedName() {
+		return belongingPackage + "." + name;
+	}	
 	
 	public Collection<InstanceVariableBean> getInstanceVariables() {
 		return instanceVariables;
@@ -89,6 +123,14 @@ public class ClassBean {
 		this.imports = imports;
 	}
 
+	public Collection<ClassBean> getInnerClasses() {
+		return innerClasses;
+	}
+
+	public void setInnerClasses(Collection<ClassBean> innerClasses) {
+		this.innerClasses = innerClasses;
+	}
+
 	public String getTextContent() {
 		return textContent;
 	}
@@ -115,6 +157,14 @@ public class ClassBean {
 	
 	public int getEntityClassUsage() {
 		return entityClassUsage;
+	}
+
+	public File getParentFile() {
+		return parentFile;
+	}
+
+	public void setParentFile(File parentFile) {
+		this.parentFile = parentFile;
 	}
 
 	public void setNumberOfGetterAndSetter(int entityClassUsage) {

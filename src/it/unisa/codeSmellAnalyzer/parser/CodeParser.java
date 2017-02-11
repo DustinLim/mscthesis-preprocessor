@@ -1,27 +1,21 @@
 package it.unisa.codeSmellAnalyzer.parser;
 
+import java.io.File;
+import java.util.List;
+
 import org.eclipse.jdt.core.dom.*;
 
 /**
  * This class contains the methods necessary for the parser;
  *
  * @author Fabio Palomba;
+ * @author Dustin Lim
  */
 
 public class CodeParser {
-	private char[] charClass;
-	private CompilationUnit unit;
-	private ASTParser parser;
-
-	public CodeParser(){					
-		
-	}
-
-	public CodeParser (String pClassToAnalyze) { 
-		this.charClass=pClassToAnalyze.toCharArray();
-	}	
-
-
+	private final String PATH_TO_ANDROID_SDK = 
+			"/Users/dustinlim/Library/Android/sdk-eclipse/platforms/android-25/android.jar";
+	
 	/**
 	 * This method allows to create a parser for the AST;
 	 * 
@@ -30,31 +24,18 @@ public class CodeParser {
 	 * @return
 	 * 			a CompilationUnit to work on;
 	 */
-	public CompilationUnit createParser() {
-		parser = ASTParser.newParser(AST.JLS4);
-		parser.setKind(ASTParser.K_COMPILATION_UNIT);
-		parser.setSource(this.charClass); // set source
-		parser.setResolveBindings(true); // we need bindings later on
-		return (CompilationUnit) parser.createAST(null);
-	}
-
-	public TypeDeclaration createParser(String pMethod, int pType) {
-		parser = ASTParser.newParser(AST.JLS4);
-		parser.setKind(pType);
-		parser.setSource(pMethod.toCharArray()); // set source
-
-		return (TypeDeclaration) parser.createAST(null);
-	}
-
-	public CompilationUnit createParser(String pClass) {
-		parser = ASTParser.newParser(AST.JLS4);
+	public CompilationUnit createParserWithBindings(File pFile, String pClass, List<String> sourcepathEntries) {
+		ASTParser parser = ASTParser.newParser(AST.JLS8);
 		parser.setKind(ASTParser.K_COMPILATION_UNIT);
 		parser.setSource(pClass.toCharArray()); // set source
 		parser.setResolveBindings(true); // we need bindings later on
+		parser.setBindingsRecovery(true);		
+		parser.setEnvironment(
+				new String[] { PATH_TO_ANDROID_SDK }, 
+				sourcepathEntries.toArray(new String[0]), 
+				null, 
+				true);
+		parser.setUnitName(pFile.getName());		
 		return (CompilationUnit) parser.createAST(null);
-	}
-
-	public CompilationUnit getCompilationUnit(){
-		return this.unit;
 	}
 }

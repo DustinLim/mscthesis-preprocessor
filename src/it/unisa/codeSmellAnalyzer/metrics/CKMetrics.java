@@ -9,10 +9,12 @@ import it.unisa.codeSmellAnalyzer.beans.*;
 
 public class CKMetrics {
 
-	public static int getLOC(ClassBean cb){
-		return cb.getTextContent().split("\r\n|\r|\n").length;
-	}
 
+	/**
+	 * Calculate Weighted Methods per Class.
+	 * This is defined as the sum of all class method complexities.
+	 * (CK metric #1) 
+	 */
 	public static int getWMC(ClassBean cb) {
 
 		int WMC = 0;
@@ -26,7 +28,12 @@ public class CKMetrics {
 
 	}
 
-
+	/**
+	 * Calculate Depth of Inheritance Tree.
+	 * This is defined as the distance between the given class and the root
+	 * of its inheritance tree.
+	 * (CK metric #2) 
+	 */
 	public static int getDIT(ClassBean cb, Vector<ClassBean> System, int inizialization){
 
 		int DIT = inizialization;
@@ -49,7 +56,11 @@ public class CKMetrics {
 
 	}
 
-
+	/**
+	 * Calculate Number of Children.
+	 * This is defined as the number of immediate children of the given class.
+	 * (CK metric #3) 
+	 */
 	public static int getNOC(ClassBean cb, Vector<ClassBean> System){
 
 		int NOC = 0;
@@ -65,20 +76,30 @@ public class CKMetrics {
 
 	}
 
+	/**
+	 * Calculate Response For a Class.
+	 * Defined as the number of methods and constructors that can be invoked
+	 * as a result of messaging the given class. 
+	 * (CK metric #5)
+	 */
 	public static int getRFC(ClassBean cb){
 
 		int RFC = 0;
 
 		Vector<MethodBean> methods = (Vector<MethodBean>) cb.getMethods();
 		for(MethodBean m: methods){
-			RFC+=m.getMethodCalls().size();
+			RFC+=m.getInvocations().size();
 		}
 
 		return RFC;
 
 	}
 
-
+	/**
+	 * Calculate Coupling between object classes.
+	 * Defined as the number of other classes to which it is coupled.
+	 * (CK metric #4)
+	 */
 	public static int getCBO(ClassBean cb){
 
 		Vector<String> imports = (Vector<String>) cb.getImports();
@@ -87,7 +108,13 @@ public class CKMetrics {
 
 	}
 
-
+	/**
+	 * Calculate Lack of Cohesion in Methods.
+	 * Defined as the number of class method pairs that do not share any
+	 * used instance variables, minus the number of method pairs that do.
+	 * This value does not drop further below zero. 
+	 * (CK metric #6)
+	 */
 	public static int getLCOM(ClassBean cb){
 
 		int share = 0;
@@ -111,41 +138,8 @@ public class CKMetrics {
 		}
 	}
 
-	public static int getNOM(ClassBean cb){
-		return cb.getMethods().size();
-	}
-
-	public static int getNOA(ClassBean cb){
-		return cb.getInstanceVariables().size();
-	}
-	
-	public static int getNOPA(ClassBean cb) {
-		int publicVariable=0;
-
-		Collection<InstanceVariableBean> variables = cb.getInstanceVariables();
-
-		for(InstanceVariableBean variable: variables) {
-			if(variable.getVisibility().equals("public"))
-				publicVariable++;
-		}
-
-		return publicVariable;
-	}
-	
-	public static int getNOPrivateA(ClassBean cb) {
-		int privateVariable=0;
-
-		Collection<InstanceVariableBean> variables = cb.getInstanceVariables();
-
-		for(InstanceVariableBean variable: variables) {
-			if(variable.getVisibility().equals("private"))
-				privateVariable++;
-		}
-
-		return privateVariable;
-	}
-
 	//Number of operations added by a subclass
+	//Unused method.
 	public static int getNOA(ClassBean cb, Vector<ClassBean> System){
 
 		int NOA = 0;
@@ -168,6 +162,7 @@ public class CKMetrics {
 
 
 	//Number of operations overridden by a subclass
+	//Unused method.
 	public static int getNOO(ClassBean cb, Vector<ClassBean> System){
 
 		int NOO = 0;
@@ -387,7 +382,7 @@ public class CKMetrics {
 
 	private static boolean existsDependence(ClassBean pClass1, ClassBean pClass2) {
 		for(MethodBean methodClass1: pClass1.getMethods()) {
-			for(MethodBean call: methodClass1.getMethodCalls()) {
+			for(InvocationBean call: methodClass1.getInvocations()) {
 
 				for(MethodBean methodClass2: pClass2.getMethods()) {
 					if(call.getName().equals(methodClass2.getName())) 
@@ -397,7 +392,7 @@ public class CKMetrics {
 		}
 
 		for(MethodBean methodClass2: pClass2.getMethods()) {
-			for(MethodBean call: methodClass2.getMethodCalls()) {
+			for(InvocationBean call: methodClass2.getInvocations()) {
 
 				for(MethodBean methodClass1: pClass1.getMethods()) {
 					if(call.getName().equals(methodClass1.getName())) 
